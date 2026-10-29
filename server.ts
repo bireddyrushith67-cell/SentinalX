@@ -13,124 +13,9 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Conversational Fallback Engine when API key is not provided or rate limited
-function generateSentinelXFallback(userMessage: string, history: Array<{ role: string; content: string }>): string {
-  const lower = userMessage.toLowerCase();
+import { evaluateSentinelChat } from './src/engine/conversationEngine.ts';
 
-  // Creator & Identity queries
-  if (
-    lower.includes('who created you') ||
-    lower.includes('who made you') ||
-    lower.includes('who built you') ||
-    lower.includes('who developed you') ||
-    lower.includes('creator') ||
-    lower.includes('who are you') ||
-    lower.includes('what is your name') ||
-    lower.includes('what are you')
-  ) {
-    return `I am **SentinelX**, an AI-powered scam detection and digital fraud prevention assistant created by **Rushith**.
-
-My mission is to help you detect, analyze, and prevent financial scams—especially fake UPI payment proofs, reverse QR code fraud, phishing messages, impersonation VPAs, and malicious screen-sharing requests.
-
-How can I protect your transactions today?`;
-  }
-
-  // Greetings
-  if (/^(hi|hello|hey|good morning|good evening|namaste)/i.test(lower)) {
-    return `Hello! I am **SentinelX**, created by **Rushith** to protect you against digital fraud, fake UPI transfers, and online scams.
-
-You can paste suspicious SMS messages, payment receipts, UPI IDs, QR code scenarios, or ask me any question about payment safety. What would you like to verify?`;
-  }
-
-  // Fake UPI transfer verification
-  if (
-    lower.includes('fake upi') ||
-    lower.includes('fake transfer') ||
-    lower.includes('fake screenshot') ||
-    lower.includes('fake payment') ||
-    lower.includes('spoof') ||
-    lower.includes('edited screenshot')
-  ) {
-    return `### 🛡️ SentinelX Fake UPI Transfer Verification Guide
-
-Scammers frequently use spoof payment generator apps (such as FakePay, Paytm Spoof) or edited screenshots to convince sellers they have transferred funds.
-
-#### 🔍 Critical Signs of a Fake UPI Screenshot:
-1. **Mismatched Fonts & Alignment:** Look closely at the transaction amount (₹), timestamp, and UTR/Reference number. Spoofed apps often use generic sans-serif fonts that don't match genuine banking typography.
-2. **Missing Bank Notification:** Never trust the buyer's screen. A genuine UPI transfer **always** triggers an SMS and an in-app push notification directly from your own bank or UPI app.
-3. **Delayed UTR / Invalid Reference:** Real UPI transaction references (RRN / UTR) are exactly 12 digits. If the UTR doesn't match an actual ledger credit in your bank statement, no money was received.
-4. **"Payment Processing" vs "Success" Trick:** Scammers show a pending or timed-out screen and rush you to release goods.
-
-#### ⚡ Rule of Thumb:
-**If your own bank balance has not increased, the payment has NOT happened.** Never release goods or services based solely on a customer's screenshot.`;
-  }
-
-  // Reverse QR code collect scam
-  if (
-    lower.includes('qr') ||
-    lower.includes('scan') ||
-    lower.includes('pin to receive') ||
-    lower.includes('reverse qr') ||
-    lower.includes('receive money')
-  ) {
-    return `### 🚨 The Golden Rule of UPI Safety
-
-> **“You NEVER need to enter a UPI PIN or scan a QR code to RECEIVE money.”**
-
-#### How the Reverse QR Scam Works:
-1. **The Trap:** A scammer pretending to buy your item on OLX, Facebook Marketplace, or Quikr claims they are sending payment via UPI.
-2. **The Deception:** They send you a QR code or a collect request on Google Pay / PhonePe / Paytm, saying: *"Scan this QR and enter your PIN to claim the ₹5,000 credit."*
-3. **The Result:** The moment you input your 4-digit or 6-digit UPI PIN, money is **debited from your bank account** and instantly transferred to the scammer.
-
-#### 🛡️ Protection Checklist:
-- **Receiving funds:** Only share your phone number or UPI ID (e.g. \`username@bank\`). The sender initiates the transfer; you do not need to press any button or approve anything.
-- **Entering UPI PIN:** A PIN prompt is **strictly for authorizing an outflow/debit**.`;
-  }
-
-  // Electricity / KYC / APK scam
-  if (
-    lower.includes('electricity') ||
-    lower.includes('kyc') ||
-    lower.includes('sim block') ||
-    lower.includes('power cutoff') ||
-    lower.includes('apk') ||
-    lower.includes('anydesk') ||
-    lower.includes('rustdesk')
-  ) {
-    return `### ⚠️ High Risk Alert: Impersonation & Malicious APK Scam
-
-#### Typical Scam Pattern:
-*"Dear consumer, your electricity power will be disconnected tonight at 9:30 PM because your previous month's bill was not updated. Please immediately contact officer at 98xxxxxxx."*
-
-#### Fraud Mechanics:
-1. **Urgency & Panic:** They create an artificial countdown (power cutoff, SIM suspension, bank account freeze) to bypass your rational thinking.
-2. **Personal Number:** Official power utility boards (BESCOM, MSEDCL, Tata Power, etc.) send messages from verified 6-character sender IDs (e.g., \`VM-BESCOM\`), never from ordinary 10-digit mobile numbers.
-3. **Malicious APK or Screen Share:** When you call, they ask you to install an app (e.g., \`Electricity_Update.apk\`, AnyDesk, or TeamViewer QuickSupport) or transfer ₹10 for "verification". This grants them full remote access or intercepts your banking OTPs.
-
-#### 🛑 Immediate Actions:
-- Do **not** call the number in the SMS.
-- Do **not** install any APK file sent via WhatsApp or Telegram.
-- Verify your bill exclusively through the official utility app or portal.`;
-  }
-
-  // General scam investigation fallback
-  return `### 🛡️ SentinelX Security Analysis
-
-**Query:** *${userMessage.trim().substring(0, 75)}*
-
-1. **Threat Evaluation:**
-   - Always verify the origin of unrequested payment links, SMS alerts, and UPI collect requests.
-   - Genuine financial institutions will **never** ask for your UPI PIN, OTP, CVV, or passwords over phone, email, or chat.
-
-2. **Detection & Verification Steps:**
-   - **Check Bank Balance:** Verify all incoming credits directly inside your bank app, not from third-party screenshots.
-   - **Validate Identifiers:** Look out for impersonation handles such as \`support.desk.sbi@okhdfcbank\` or unofficial domains.
-   - **Report Fraud:** If you suspect an ongoing scam in India, immediately dial **1930** (National Cyber Crime Helpline) or lodge a complaint at **cybercrime.gov.in** within the first 2-hour "golden period".
-
-I am **SentinelX**, created by **Rushith**. Would you like me to inspect a specific message, link, or transaction identifier?`;
-}
-
-// API: Chat Endpoint with Honest Models & Bring Your Own Key (BYOK)
+// API: Chat Endpoint with Honest Models, Deterministic Engine & BYOK
 app.post('/api/chat', async (req: Request, res: Response) => {
   const { messages, model } = req.body;
 
@@ -139,6 +24,24 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   }
 
   const lastUserMsg = messages[messages.length - 1]?.content || '';
+  const priorHistory = messages.slice(0, -1);
+
+  // 1. Evaluate deterministically using SentinelX Core Engine
+  const deterministicResult = evaluateSentinelChat(lastUserMsg, priorHistory);
+
+  // Model selection (default to gemini-2.5-flash)
+  const allowedModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'];
+  const targetModel = allowedModels.includes(model) ? model : 'gemini-2.5-flash';
+
+  // If intent was explicit GREETING or IDENTITY, return the dedicated response immediately
+  if (deterministicResult.intent === 'GREETING' || deterministicResult.intent === 'IDENTITY') {
+    return res.json({
+      reply: deterministicResult.reply,
+      verdict: deterministicResult.verdict,
+      model: targetModel,
+      source: 'sentinel_core_engine'
+    });
+  }
 
   // Check for Custom API key in request header or body (BYOK)
   const customKeyHeader = req.headers['x-custom-api-key'] || req.headers['x-gemini-api-key'];
@@ -149,30 +52,40 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     ? customKey 
     : ((serverKey && serverKey !== 'MY_GEMINI_API_KEY') ? serverKey : '');
 
-  // Model selection (default to gemini-2.5-flash)
-  const allowedModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'];
-  const targetModel = allowedModels.includes(model) ? model : 'gemini-2.5-flash';
-
-  const systemInstruction = `You are SentinelX, an advanced AI security intelligence and digital fraud prevention assistant created by Rushith.
-
-CRITICAL IDENTITY RULES:
-- Your name is SentinelX.
-- You were created and developed by Rushith.
-- If the user asks "who created you", "who made you", "who is your creator", "who built you", or about your origins, you MUST explicitly state that you are SentinelX, created by Rushith.
-- You specialize in explainable scam detection, fake UPI payment verification, phishing forensics, and payment safety.
-- Format all responses with clear Markdown headings, bullet points, risk level indicators (Low / Medium / High / Critical), and actionable advice.
-- When explaining payment scams, emphasize the golden rule: Entering a UPI PIN always DEBITS money, never receives money.`;
-
-  // If no effective key is configured, use SentinelX's intelligent fallback
+  // If no effective key is configured, use SentinelX's deterministic detection engine directly
   if (!effectiveApiKey) {
-    const fallbackReply = generateSentinelXFallback(lastUserMsg, messages);
     return res.json({ 
-      reply: fallbackReply, 
+      reply: deterministicResult.reply,
+      verdict: deterministicResult.verdict,
       model: targetModel,
-      source: 'offline_heuristic_engine',
+      source: 'sentinel_core_engine',
       byok: Boolean(customKey)
     });
   }
+
+  const systemInstruction = `You are SentinelX, an advanced AI security intelligence and digital fraud prevention assistant created by Rushith.
+
+CRITICAL IDENTITY & GREETING RULES:
+- Your name is SentinelX.
+- You were created and developed by Rushith.
+- If the user asks "who created you", "who made you", "who is your creator", "who built you", or about your origins, you MUST explicitly state that you are SentinelX, created by Rushith.
+- If a new conversation starts or the user greets ("hi", "hello") or explicitly restarts ("restart", "reset"), respond ONLY with: "I am SentinelX, created by Rushith. How can I help you today?"
+- NEVER repeat that greeting as the answer to any other user message.
+
+CRITICAL INVESTIGATION RESPONSE FORMAT:
+For EVERY investigated situation or suspicious scenario, you MUST structure your response with these exact sections:
+- **Verdict:** [Must be exactly one of: HIGH RISK, CAUTION, or NO KNOWN WARNING]
+- **Why:** [A short, clear explanation of the relevant warning signs, or why the scenario is legitimate or ambiguous]
+- **What to do:** [Clear, practical, numbered step-by-step safety actions]
+- **Reporting:** [If money has been lost or credentials exposed, advise contacting India's national cybercrime helpline 1930 promptly and visiting https://www.cybercrime.gov.in/]
+
+CONVERSATION MEMORY:
+- Maintain conversation memory across turns. If the user asks follow-up questions such as "what should I do next?", "is it safe?", "can I get my money back?", or "how do I block my account?", contextualize your answer based on what was discussed earlier in this conversation.
+
+CORE UPI SECURITY PRINCIPLES:
+- Scanning a QR code or entering a UPI PIN strictly DEBITS money. You NEVER need to enter a PIN or scan a QR code to receive money, advance payments, refunds, or cashbacks.
+- Beware of: fake loan demands with upfront fees, fake customer care numbers found on Google search, remote desktop apps (AnyDesk, TeamViewer, RustDesk), fake UPI payment screenshots (Paytm Spoof/FakePay), accidental refund tricks, and urgent utility/KYC disconnection threats.
+- Legitimate scenarios (paying at a physical grocery store counter, transferring to known family members) must be recognized with "Verdict: NO KNOWN WARNING".`;
 
   try {
     const { GoogleGenAI } = await import('@google/genai');
@@ -191,24 +104,30 @@ CRITICAL IDENTITY RULES:
       contents: contents.length > 0 ? contents : [{ role: 'user', parts: [{ text: lastUserMsg }] }],
       config: {
         systemInstruction,
-        temperature: 0.6,
+        temperature: 0.4,
       }
     });
 
-    const reply = response.text || generateSentinelXFallback(lastUserMsg, messages);
+    let reply = response.text?.trim() || deterministicResult.reply;
+    // Enforce required Verdict structure if the model outputs an unformatted generic message
+    if (!reply.includes('Verdict:')) {
+      reply = deterministicResult.reply;
+    }
+
     return res.json({ 
       reply, 
+      verdict: deterministicResult.verdict,
       model: targetModel,
       source: 'gemini_api',
       byok: Boolean(customKey)
     });
   } catch (err: any) {
     console.error('SentinelX Chat API Error:', err?.message || err);
-    const fallbackReply = generateSentinelXFallback(lastUserMsg, messages);
     return res.json({ 
-      reply: fallbackReply, 
+      reply: deterministicResult.reply, 
+      verdict: deterministicResult.verdict,
       model: targetModel, 
-      source: 'fallback_after_error',
+      source: 'sentinel_core_engine_fallback',
       error: err?.message || 'API request failed'
     });
   }

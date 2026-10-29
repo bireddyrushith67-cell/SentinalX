@@ -5,37 +5,47 @@ interface EmptyStateProps {
   onSelectPrompt: (prompt: string) => void;
 }
 
+export interface SuggestionItem {
+  title: string;
+  desc: string;
+  icon: any;
+  badge: string;
+  prompt: string;
+}
+
+export const SUGGESTED_INVESTIGATIONS: SuggestionItem[] = [
+  {
+    title: 'Stop Fake UPI Transfers',
+    desc: 'Verify fake payment screenshot, edited SMS alert, or 12-digit UTR',
+    icon: ShieldAlert,
+    badge: 'High Threat',
+    prompt: 'How can I detect if a customer is showing me a fake UPI payment screenshot or spoofed app (like Paytm Spoof / FakePay)? What are the exact signs to look for?'
+  },
+  {
+    title: 'Reverse QR Code Trap',
+    desc: 'Why scanning a QR code or entering a PIN always debits funds',
+    icon: QrCode,
+    badge: 'Golden Rule',
+    prompt: 'A buyer on OLX sent me a QR code saying I must scan it and enter my UPI PIN to receive ₹5,000 for my item. Is this legitimate or a scam? Explain how UPI PIN works.'
+  },
+  {
+    title: 'Electricity / KYC Threat',
+    desc: 'Analyze urgent SMS claiming power cutoff or SIM suspension',
+    icon: AlertTriangle,
+    badge: 'Impersonation',
+    prompt: 'I received this message: "Dear consumer your electricity power will be disconnected tonight at 9:30 PM due to unpaid bill. Call electricity officer immediately at 9876543210." Is this a scam?'
+  },
+  {
+    title: 'Verify Suspect UPI ID / VPA',
+    desc: 'Check if handles like refund.desk.sbi@ybl are spoofed',
+    icon: ShieldCheck,
+    badge: 'VPA Check',
+    prompt: 'How do I verify whether a UPI ID like "sbi.customer.refund.desk@okhdfcbank" is an official bank handle or a scammer impersonating customer support?'
+  }
+];
+
 export const EmptyState: React.FC<EmptyStateProps> = ({ onSelectPrompt }) => {
-  const suggestions = [
-    {
-      title: 'Stop Fake UPI Transfers',
-      desc: 'Verify fake payment screenshot, edited SMS alert, or 12-digit UTR',
-      icon: ShieldAlert,
-      badge: 'High Threat',
-      prompt: 'How can I detect if a customer is showing me a fake UPI payment screenshot or spoofed app (like Paytm Spoof / FakePay)? What are the exact signs to look for?'
-    },
-    {
-      title: 'Reverse QR Code Trap',
-      desc: 'Why scanning a QR code or entering a PIN always debits funds',
-      icon: QrCode,
-      badge: 'Golden Rule',
-      prompt: 'A buyer on OLX sent me a QR code saying I must scan it and enter my UPI PIN to receive ₹5,000 for my item. Is this legitimate or a scam? Explain how UPI PIN works.'
-    },
-    {
-      title: 'Electricity / KYC Threat',
-      desc: 'Analyze urgent SMS claiming power cutoff or SIM suspension',
-      icon: AlertTriangle,
-      badge: 'Impersonation',
-      prompt: 'I received this message: "Dear consumer your electricity power will be disconnected tonight at 9:30 PM due to unpaid bill. Call electricity officer immediately at 9876543210." Is this a scam?'
-    },
-    {
-      title: 'Verify Suspect UPI ID / VPA',
-      desc: 'Check if handles like refund.desk.sbi@ybl are spoofed',
-      icon: ShieldCheck,
-      badge: 'VPA Check',
-      prompt: 'How do I verify whether a UPI ID like "sbi.customer.refund.desk@okhdfcbank" is an official bank handle or a scammer impersonating customer support?'
-    }
-  ];
+  const suggestions = SUGGESTED_INVESTIGATIONS;
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center max-w-2xl mx-auto my-auto animate-in fade-in duration-200">
