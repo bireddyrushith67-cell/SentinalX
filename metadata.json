@@ -1,0 +1,6 @@
+{
+  "name": "UPI GUARD",
+  "description": "Explainable, Proactive UPI Scam Detection and Prevention System for HCL Jigsaw Level 2 innovation competition. Detects scam patterns, validates indicators, and prevents unauthorized payments before you pay.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
